@@ -18,17 +18,17 @@ runner:
   train_reader_path: "criteo_reader" # importlib format
   use_gpu: False
   use_auc: True
-  train_batch_size: 2
-  epochs: 3
+  train_batch_size: 16
+  epochs: 1
   print_interval: 2
   #model_init_path: "output_model/0" # init model
   model_save_path: "output_model_deepfm"
   test_data_dir: "data/sample_data/train"
   infer_reader_path: "criteo_reader" # importlib format
-  infer_batch_size: 5
+  infer_batch_size: 16
   infer_load_path: "output_model_deepfm"
-  infer_start_epoch: 0
-  infer_end_epoch: 3
+  infer_start_epoch: 1000
+  infer_end_epoch: 1001
 
 
 # hyper parameters of user-defined network
@@ -41,7 +41,7 @@ hyper_parameters:
   # user-defined <key, value> pairs
   sparse_inputs_slots: 27
   sparse_feature_number: 1000001
-  sparse_feature_dim: 4
+  sparse_feature_dim: 9
   dense_input_dim: 13
   fc_sizes: [512, 256, 128, 32]
   distributed_embedding: 0

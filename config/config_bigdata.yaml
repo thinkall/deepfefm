@@ -19,29 +19,29 @@ runner:
   train_reader_path: "criteo_reader" # importlib format
   use_gpu: True
   use_auc: False
-  train_batch_size: 512
+  train_batch_size: 5120
   epochs: 1
   print_interval: 10
   #model_init_path: "output_model/0" # init model
   model_save_path: "output_model_all_deepfm"
   test_data_dir: "../../../datasets/criteo/slot_test_data_full"
   infer_reader_path: "criteo_reader" # importlib format
-  infer_batch_size: 512
+  infer_batch_size: 5120
   infer_load_path: "output_model_all_deepfm"
-  infer_start_epoch: 0
-  infer_end_epoch: 1
+  infer_start_epoch: 1000
+  infer_end_epoch: 1001
 
 # hyper parameters of user-defined network
 hyper_parameters:
   # optimizer config
   optimizer:
     class: Adam
-    learning_rate: 0.001
+    learning_rate: 0.01
     strategy: async
   # user-defined <key, value> pairs
   sparse_inputs_slots: 27
   sparse_feature_number: 1000001
-  sparse_feature_dim: 9
+  sparse_feature_dim: 16
   dense_input_dim: 13
   fc_sizes: [400, 400, 400]
   distributed_embedding: 0
