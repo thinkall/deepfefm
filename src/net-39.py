@@ -131,12 +131,11 @@ class FEFM(nn.Layer):
         sparse_embeddings = self.embedding(sparse_inputs_concat)  # [batch_size, sparse_feature_number, sparse_feature_dim]
         dense_inputs_re = paddle.unsqueeze(dense_inputs, axis=2)  # [batch_size, dense_feature_number, 1]
         dense_embeddings = paddle.multiply(dense_inputs_re, self.dense_w)  # [batch_size, dense_feature_number, dense_feature_dim]
-        # feat_embeddings = paddle.concat([sparse_embeddings, dense_embeddings],  # [batch_size, dense_feature_number + sparse_feature_number, dense_feature_dim]
-        #                                 1)
-        feat_embeddings = sparse_embeddings
+        feat_embeddings = paddle.concat([sparse_embeddings, dense_embeddings],  # [batch_size, dense_feature_number + sparse_feature_number, dense_feature_dim]
+                                        1)
 
         pairwise_inner_prods = []
-        for fi, fj in itertools.combinations(range(self.sparse_num_field), 2):  # self.num_fields = 39, dense_feature_number + sparse_feature_number
+        for fi, fj in itertools.combinations(range(self.num_fields), 2):  # self.num_fields = 39, dense_feature_number + sparse_feature_number
             field_pair_id = str(fi) + "-" + str(fj)
             feat_embed_i = paddle.squeeze(feat_embeddings[0:, fi:fi + 1, 0:], axis=1)  # feat_embeddings: [batch_size, num_fields, sparse_feature_dim]
             feat_embed_j = paddle.squeeze(feat_embeddings[0:, fj:fj + 1, 0:], axis=1)  # [batch_size * sparse_feature_dim]
@@ -167,9 +166,8 @@ class DNN(paddle.nn.Layer):
         self.dense_feature_dim = dense_feature_dim
         self.num_field = num_field
         self.layer_sizes = layer_sizes
-        self.sparse_num_field = num_field - dense_feature_dim
-        self.input_size = int(dense_feature_dim + self.sparse_num_field * sparse_feature_dim
-                              + self.sparse_num_field*(self.sparse_num_field-1)/2)
+        self.input_size = int(dense_feature_dim + (num_field-dense_feature_dim) * sparse_feature_dim
+                              + num_field*(num_field-1)/2)
 
         sizes = [self.input_size] + self.layer_sizes + [1]
         acts = ["relu" for _ in range(len(self.layer_sizes))] + [None]

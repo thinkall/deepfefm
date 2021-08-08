@@ -319,7 +319,7 @@ if __name__ == '__main__':
     best_lr = -1
 
     # # if you want to try different learning_rate in one running, set try_lrs as below:
-    try_lrs = [0.005, 0.008, 0.01, 0.02]
+    try_lrs = [0.001, 0.003, 0.006, 0.008, 0.01]
     # # else if you want use learning_rate as set in config file, set try_lrs as below:
     # try_lrs = [None]
 

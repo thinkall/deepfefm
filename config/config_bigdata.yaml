@@ -43,5 +43,5 @@ hyper_parameters:
   sparse_feature_number: 1000001
   sparse_feature_dim: 16
   dense_input_dim: 13
-  fc_sizes: [400, 400, 400]
+  fc_sizes: [256, 128, 32]
   distributed_embedding: 0
