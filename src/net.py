@@ -160,7 +160,7 @@ class FEFM(nn.Layer):
 
 class DNN(paddle.nn.Layer):
     def __init__(self, sparse_feature_number, sparse_feature_dim,
-                 dense_feature_dim, num_field, layer_sizes):
+                 dense_feature_dim, num_field, layer_sizes, dropout_rate=0.2):
         super(DNN, self).__init__()
         self.sparse_feature_number = sparse_feature_number
         self.sparse_feature_dim = sparse_feature_dim
@@ -170,6 +170,8 @@ class DNN(paddle.nn.Layer):
         self.sparse_num_field = num_field - dense_feature_dim
         self.input_size = int(dense_feature_dim + self.sparse_num_field * sparse_feature_dim
                               + self.sparse_num_field*(self.sparse_num_field-1)/2)
+
+        self.drop_out = paddle.nn.Dropout(p=dropout_rate)
 
         sizes = [self.input_size] + self.layer_sizes + [1]
         acts = ["relu" for _ in range(len(self.layer_sizes))] + [None]
@@ -192,4 +194,5 @@ class DNN(paddle.nn.Layer):
                                [-1, self.input_size])
         for n_layer in self._mlp_layers:
             y_dnn = n_layer(y_dnn)
+            y_dnn = self.drop_out(y_dnn)
         return y_dnn
