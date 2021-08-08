@@ -57,11 +57,16 @@ class DygraphModel():
         avg_cost = paddle.mean(x=cost)
         return avg_cost
 
-    # define optimizer 
+    # define optimizer
     def create_optimizer(self, dy_model, config):
         lr = config.get("hyper_parameters.optimizer.learning_rate", 0.001)
-        optimizer = paddle.optimizer.Adam(
-            learning_rate=lr, parameters=dy_model.parameters())
+        opt = config.get("hyper_parameters.optimizer.class", 'Adam')
+        if opt == 'Adagrad':
+            optimizer = paddle.optimizer.Adagrad(
+                learning_rate=lr, parameters=dy_model.parameters())
+        else:
+            optimizer = paddle.optimizer.Adam(
+                learning_rate=lr, parameters=dy_model.parameters())
         return optimizer
 
     # define metrics such as auc/acc
