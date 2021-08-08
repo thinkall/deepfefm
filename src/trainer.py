@@ -301,12 +301,12 @@ if __name__ == '__main__':
             try:
                 os.rename(
                     src=f'{model_save_path}/0',
-                    dst=f'{model_save_path}/b{train_batch_size}l{str(lr)[2:]}auc{str(auc)[2:]}'
+                    dst=f'{model_save_path}/b{train_batch_size}l{str(best_lr)[2:]}auc{str(auc)[2:]}'
                 )
             except Exception as e:
                 print(e)
             print(
-                f'rename 0 to b{train_batch_size}l{str(lr)[2:]}auc{str(auc)[2:]}'
+                f'rename 0 to b{train_batch_size}l{str(best_lr)[2:]}auc{str(auc)[2:]}'
             )
         return best_auc, best_lr
 
@@ -319,9 +319,9 @@ if __name__ == '__main__':
     best_lr = -1
 
     # # if you want to try different learning_rate in one running, set try_lrs as below:
-    try_lrs = [0.001, 0.003, 0.006, 0.008, 0.01]
+    # try_lrs = [0.001, 0.003, 0.006, 0.008, 0.01]
     # # else if you want use learning_rate as set in config file, set try_lrs as below:
-    # try_lrs = [None]
+    try_lrs = [None]
 
     for lr in try_lrs:
         best_auc, best_lr = f(best_auc, best_lr, lr, args)
