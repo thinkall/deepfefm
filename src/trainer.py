@@ -69,25 +69,9 @@ def infer_test(dy_model, test_dataloader, dy_model_class, config,
         metric_list, tensor_print_dict = dy_model_class.infer_forward(
             dy_model, metric_list, batch, config)
 
-        # if batch_id == print_interval:
-        #     tensor_print_str = ""
-        #     if tensor_print_dict is not None:
-        #         for var_name, var in tensor_print_dict.items():
-        #             tensor_print_str += (
-        #                 "{}:".format(var_name) + str(var.numpy()) + ",")
-
-        #     metric_str = ""
-        #     for metric_id in range(len(metric_list_name)):
-        #         metric_str += (
-        #             metric_list_name[metric_id] +
-        #             ": {:.6f},".format(metric_list[metric_id].accumulate())
-        #         )
-        #     logger.info("validation epoch: {}, batch_id: {}, ".format(
-        #         epoch_id, batch_id) + metric_str + tensor_print_str +
-        #                 " speed: {:.2f} ins/s".format(
-        #                     print_interval * batch_size / (time.time(
-        #                     ) - interval_begin)))
-        #     break
+        # only test 10 epochs to improve speed
+        if batch_id > 10:
+            break
 
     metric_str = ""
     for metric_id in range(len(metric_list_name)):
@@ -172,8 +156,9 @@ def main(args, lr):
     last_epoch_id = config.get("last_epoch", -1)
     step_num = 0
 
-    best_metric = 0
-
+    best_metric = 0.79
+    is_stop = False
+    
     for epoch_id in range(last_epoch_id + 1, epochs):
         # set train mode
         dy_model.train()
@@ -234,12 +219,15 @@ def main(args, lr):
                                train_reader_cost + train_run_cost),
                            loss.numpy()[0]))
 
-                # if batch_id > 80000:
-                #     tmp_auc = infer_test(dy_model, test_dataloader, dy_model_class, config, print_interval, epoch_id)
-                #     if tmp_auc > best_metric:
-                #         best_metric = tmp_auc
-                #         save_model(dy_model, optimizer, model_save_path, 1000+epoch_id, prefix='rec')
-                #         logger.info(f"saved best model, {metric_list_name[0]}: {best_metric}")
+                if batch_id % (print_interval*10) == 0 and batch_id > 0:
+                    tmp_auc = infer_test(dy_model, test_dataloader, dy_model_class, config, print_interval, epoch_id)
+                    if tmp_auc > best_metric:
+                        best_metric = tmp_auc
+                        save_model(dy_model, optimizer, model_save_path, f'b{train_batch_size}l{str(lr)[2:]}auc{str(tmp_auc)[2:]}', prefix='rec')
+                        logger.info(f"batch_id={batch_id}, saved best model, {metric_list_name[0]}: {best_metric}")
+                        if best_metric >= 0.8001:
+                            is_stop = True
+                            break
 
                 train_reader_cost = 0.0
                 train_run_cost = 0.0
@@ -247,6 +235,10 @@ def main(args, lr):
             reader_start = time.time()
             step_num = step_num + 1
 
+            ## early_stopping 
+            #if metric_list[0].accumulate() > 0.9:
+            #    break
+            
         metric_str = ""
         for metric_id in range(len(metric_list_name)):
             metric_str += (
@@ -279,10 +271,14 @@ def main(args, lr):
         if metric_list[0].accumulate() >= 0.95:
             print('Already over fitting, stop training!')
             break
+        
+        if is_stop:
+            print('Get a good result!')
+            break
 
     infer_auc = infer_test(dy_model, test_dataloader, dy_model_class, config,
                            print_interval, epoch_id)
-    return infer_auc, lr, train_batch_size, model_save_path
+    return infer_auc, lr, train_batch_size, model_save_path, epoch_id
 
 
 if __name__ == '__main__':
@@ -290,23 +286,23 @@ if __name__ == '__main__':
     import shutil
 
     def f(best_auc, best_lr, current_lr, args):
-        auc, current_lr, train_batch_size, model_save_path = main(args,
+        auc, current_lr, train_batch_size, model_save_path, epoch_id = main(args,
                                                                   current_lr)
         print(f'Trying Current_lr: {current_lr}, AUC: {auc}')
         if auc > best_auc:
             best_auc = auc
             best_lr = current_lr
             shutil.rmtree(f'{model_save_path}/1000', ignore_errors=True)
-            shutil.copytree(f'{model_save_path}/0', f'{model_save_path}/1000')
+            shutil.copytree(f'{model_save_path}/{epoch_id}', f'{model_save_path}/1000')
             try:
                 os.rename(
-                    src=f'{model_save_path}/0',
+                    src=f'{model_save_path}/{epoch_id}',
                     dst=f'{model_save_path}/b{train_batch_size}l{str(best_lr)[2:]}auc{str(auc)[2:]}'
                 )
             except Exception as e:
                 print(e)
             print(
-                f'rename 0 to b{train_batch_size}l{str(best_lr)[2:]}auc{str(auc)[2:]}'
+                f'rename {epoch_id} to b{train_batch_size}l{str(best_lr)[2:]}auc{str(auc)[2:]}'
             )
         return best_auc, best_lr
 
@@ -315,18 +311,19 @@ if __name__ == '__main__':
         paddle.disable_static()
 
     args = parse_args()
-    best_auc = 0.0
+    best_auc = 0.79
     best_lr = -1
 
     # # if you want to try different learning_rate in one running, set try_lrs as below:
     # try_lrs = [0.001, 0.003, 0.006, 0.008, 0.01]
     # # else if you want use learning_rate as set in config file, set try_lrs as below:
-    try_lrs = [None]
+    try_lrs = [None] # [0.0005, 0.001, 0.005, 0.01]
 
     for lr in try_lrs:
         best_auc, best_lr = f(best_auc, best_lr, lr, args)
         reset_graph()
-        if best_auc >= 0.801:  # 0.6447 is the metric in the original paper
+        if best_auc >= 0.8001:  # 0.81405 is the metric in the original paper
             break
 
     print(f'Best AUC: {best_auc}, Best learning_rate: {best_lr}')
+

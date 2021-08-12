@@ -3,10 +3,10 @@ import paddle
 
 def batch_dot(x, y, axes=None):
     """Batchwise dot product.
-    >>> x_batch = paddle.ones(shape=(32, 20, 1))
-    >>> y_batch = paddle.ones(shape=(32, 30, 20))
-    >>> xy_batch_dot = batch_dot(x_batch, y_batch, axes=(1, 2))
-    >>> xy_batch_dot.shape
+    # >>> x_batch = paddle.ones(shape=(32, 20, 1))
+    # >>> y_batch = paddle.ones(shape=(32, 30, 20))
+    # >>> xy_batch_dot = batch_dot(x_batch, y_batch, axes=(1, 2))
+    # >>> xy_batch_dot.shape
     (32, 1, 30)
 
     Shape inference:
@@ -167,7 +167,32 @@ def batch_dot(x, y, axes=None):
 
 
 if __name__ == '__main__':
-    x_batch = paddle.ones(shape=(32, 20, 1))
-    y_batch = paddle.ones(shape=(32, 30, 20))
-    xy_batch_dot = batch_dot(x_batch, y_batch, axes=(1, 2))
-    print(xy_batch_dot.shape)
+    import numpy as np
+
+    # x_batch = paddle.ones(shape=(32, 20, 1))
+    # y_batch = paddle.ones(shape=(32, 30, 20))
+
+    x_batch = np.array([[-1.0115546, -0.02948455, 0.871699],
+                        [0.08505919, -0.849537, 0.43243495],
+                        [0.87515765, 1.0287786, -0.8976419],
+                        [1.6105489, 0.7082569, 0.12437075]],
+                       dtype='float32')
+    y_batch = np.array([[-0.8520051, 0.47021824, 0.8739443],
+                        [-1.1984695, -1.0846833, 0.630532],
+                        [1.0684944, -1.504634, -0.23854674],
+                        [-0.7199577, -0.47609442, -0.64525014]],
+                       dtype='float32')
+
+    x_batch = paddle.to_tensor(x_batch)
+    y_batch = paddle.to_tensor(y_batch)
+
+    xy_batch_dot = batch_dot(x_batch, y_batch, axes=1)
+    print(xy_batch_dot)
+
+    """
+    Tensor(shape=[4, 1], dtype=float32, place=CPUPlace, stop_gradient=True,
+       [[ 1.60980189],
+        [ 1.09220183],
+        [-0.39870456],
+        [-1.57697451]])
+    """

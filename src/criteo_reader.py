@@ -43,6 +43,8 @@ class RecDataset(IterableDataset):
         full_lines = []
         self.data = []
         for file in self.file_list:
+            if '.DS_Store' in file:
+                continue
             with open(file, "r") as rf:
                 for l in rf:
                     line = l.strip().split(" ")

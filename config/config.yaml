@@ -19,7 +19,7 @@ runner:
   use_gpu: False
   use_auc: True
   train_batch_size: 16
-  epochs: 1
+  epochs: 2
   print_interval: 2
   #model_init_path: "output_model/0" # init model
   model_save_path: "output_model_deepfm"
@@ -27,9 +27,8 @@ runner:
   infer_reader_path: "criteo_reader" # importlib format
   infer_batch_size: 16
   infer_load_path: "output_model_deepfm"
-  infer_start_epoch: 1000
-  infer_end_epoch: 1001
-
+  infer_start_epoch: 0
+  infer_end_epoch: 2
 
 # hyper parameters of user-defined network
 hyper_parameters:

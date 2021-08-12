@@ -32,8 +32,8 @@ class DygraphModel():
         sparse_input_slot = config.get('hyper_parameters.sparse_inputs_slots')
 
         deepfefm_model = net.DeepFEFMLayer(sparse_feature_number,
-                                       sparse_feature_dim, dense_feature_dim,
-                                       sparse_input_slot - 1, fc_sizes)
+                                           sparse_feature_dim, dense_feature_dim,
+                                           sparse_input_slot - 1, fc_sizes)
 
         return deepfefm_model
 
@@ -63,10 +63,17 @@ class DygraphModel():
         opt = config.get("hyper_parameters.optimizer.class", 'Adam')
         if opt == 'Adagrad':
             optimizer = paddle.optimizer.Adagrad(
-                learning_rate=lr, parameters=dy_model.parameters())
+                learning_rate=lr, parameters=dy_model.parameters(),
+                weight_decay=None)
+        elif opt == 'AdamW':
+            optimizer = paddle.optimizer.AdamW(
+                learning_rate=lr, parameters=dy_model.parameters(),
+                weight_decay=None)
         else:
             optimizer = paddle.optimizer.Adam(
-                learning_rate=lr, parameters=dy_model.parameters())
+                learning_rate=lr, parameters=dy_model.parameters(),
+                weight_decay=None)  # 2e-6
+
         return optimizer
 
     # define metrics such as auc/acc
