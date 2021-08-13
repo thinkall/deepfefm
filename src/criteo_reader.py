@@ -57,7 +57,7 @@ class RecDataset(IterableDataset):
                         if slot in self.sparse_slots:
                             feasign = int(slot_feasign[1])
                         else:
-                            feasign = float(slot_feasign[1])
+                            feasign = max(0.0, min(1.0, float(slot_feasign[1])))
                         output[self.slot2index[slot]][1].append(feasign)
                         self.visit[slot] = True
                     for i in self.visit:

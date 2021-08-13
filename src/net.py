@@ -74,8 +74,9 @@ class FEFM(nn.Layer):
                     mean=0.0,
                     std=self.init_value_ /
                     math.sqrt(float(self.sparse_feature_dim))),
-                regularizer=paddle.regularizer.L2Decay(2e-6)))
+                regularizer=paddle.regularizer.L2Decay(1e-6)))
 
+        # sparse embedding and dense embedding
         self.embedding = paddle.nn.Embedding(
             self.sparse_feature_number,
             self.sparse_feature_dim,
@@ -86,21 +87,12 @@ class FEFM(nn.Layer):
                     mean=0.0,
                     std=self.init_value_ /
                     math.sqrt(float(self.sparse_feature_dim))),
-                regularizer=paddle.regularizer.L2Decay(2e-5)))
+                regularizer=paddle.regularizer.L2Decay(1e-6)))
 
         # dense coding
         self.dense_w_one = paddle.create_parameter(
             shape=[self.dense_feature_dim],
-            attr=paddle.ParamAttr(regularizer=paddle.regularizer.L2Decay(2e-6)),
-            dtype='float32',
-            default_initializer=paddle.nn.initializer.TruncatedNormal(
-                mean=0.0,
-                std=self.init_value_ /
-                math.sqrt(float(self.sparse_feature_dim))))
-
-        self.dense_w = paddle.create_parameter(
-            shape=[1, self.dense_feature_dim, self.dense_emb_dim],
-            attr=paddle.ParamAttr(regularizer=paddle.regularizer.L2Decay(2e-5)),
+            attr=paddle.ParamAttr(regularizer=paddle.regularizer.L2Decay(1e-6)),
             dtype='float32',
             default_initializer=paddle.nn.initializer.TruncatedNormal(
                 mean=0.0,
@@ -114,7 +106,7 @@ class FEFM(nn.Layer):
             field_pair_id = str(fi) + "-" + str(fj)
             self.field_embeddings[field_pair_id] = paddle.create_parameter(
                 shape=[self.sparse_feature_dim, self.sparse_feature_dim],
-                attr=paddle.ParamAttr(regularizer=paddle.regularizer.L2Decay(2e-7)),
+                attr=paddle.ParamAttr(regularizer=paddle.regularizer.L2Decay(1e-7)),
                 dtype='float32',
                 default_initializer=paddle.nn.initializer.TruncatedNormal(
                     mean=0.0,
@@ -134,14 +126,13 @@ class FEFM(nn.Layer):
 
         # -------------------- Field-embedded second order term  --------------------
         sparse_embeddings = self.embedding(sparse_inputs_concat)  # [batch_size, sparse_feature_number, sparse_feature_dim]
-        # dense_inputs_re = paddle.unsqueeze(dense_inputs, axis=2)  # [batch_size, dense_feature_number, 1]
-        # dense_embeddings = paddle.multiply(dense_inputs_re, self.dense_w)  # [batch_size, dense_feature_number, dense_feature_dim]
-        # feat_embeddings_dnn = paddle.concat([sparse_embeddings, dense_embeddings], 1)  # [batch_size, dense_feature_number + sparse_feature_number, dense_feature_dim]
+        dense_inputs_re = (dense_inputs * 1e5 + 1e6 + 2).astype('int64')  # [batch_size, dense_feature_number]
+        dense_embeddings = self.embedding(dense_inputs_re)  # [batch_size, dense_feature_number, dense_feature_dim]
 
-        feat_embeddings = sparse_embeddings
+        feat_embeddings = paddle.concat([sparse_embeddings, dense_embeddings], 1)  # [batch_size, dense_feature_number + sparse_feature_number, dense_feature_dim]
 
         pairwise_inner_prods = []
-        for fi, fj in itertools.combinations(range(self.sparse_num_field), 2):  # self.num_fields = 39, dense_feature_number + sparse_num_field
+        for fi, fj in itertools.combinations(range(self.num_fields), 2):  # self.num_fields = 39, dense_feature_number + sparse_num_field
             field_pair_id = str(fi) + "-" + str(fj)
             feat_embed_i = paddle.squeeze(feat_embeddings[0:, fi:fi + 1, 0:], axis=1)  # feat_embeddings: [batch_size, num_fields, sparse_feature_dim]
             feat_embed_j = paddle.squeeze(feat_embeddings[0:, fj:fj + 1, 0:], axis=1)  # [batch_size * sparse_feature_dim]
@@ -157,7 +148,7 @@ class FEFM(nn.Layer):
         y_field_emb_second_order = paddle.sum(fefm_interaction_embedding, axis=1, keepdim=True)
 
         dnn_input = paddle.reshape(sparse_embeddings, [sparse_embeddings.shape[0], -1])
-        dnn_input = paddle.concat([dnn_input, dense_inputs], 1)  # [batch_size, dense_feature_number + sparse_feature_number * sparse_feature_dim]
+        dnn_input = paddle.concat([dnn_input, _dense_emb_one], 1)  # [batch_size, dense_feature_number + sparse_feature_number * sparse_feature_dim]
         dnn_input = paddle.concat([dnn_input, fefm_interaction_embedding], 1)  # [batch_size, dense_feature_number + sparse_feature_number * sparse_feature_dim + num_fields*(num_fields-1)/2]
 
         return y_first_order, y_field_emb_second_order, dnn_input
@@ -174,7 +165,7 @@ class DNN(paddle.nn.Layer):
         self.layer_sizes = layer_sizes
         self.sparse_num_field = num_field - dense_feature_dim
         self.input_size = int(dense_feature_dim + self.sparse_num_field * sparse_feature_dim
-                              + self.sparse_num_field*(self.sparse_num_field-1)/2)
+                              + self.num_field*(self.num_field-1)/2)
 
         self.drop_out = paddle.nn.Dropout(p=dropout_rate)
 
@@ -186,7 +177,7 @@ class DNN(paddle.nn.Layer):
                 in_features=sizes[i],
                 out_features=sizes[i + 1],
                 weight_attr=paddle.ParamAttr(
-                    regularizer=paddle.regularizer.L2Decay(2e-7),
+                    regularizer=paddle.regularizer.L2Decay(1e-7),
                     initializer=paddle.nn.initializer.Normal(
                         std=1.0 / math.sqrt(sizes[i]))))
             self.add_sublayer('linear_%d' % i, linear)

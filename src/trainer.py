@@ -238,6 +238,10 @@ def main(args, lr):
             ## early_stopping 
             #if metric_list[0].accumulate() > 0.9:
             #    break
+
+            # same data as in paper
+            if batch_size * batch_id >= 29337994:
+                break
             
         metric_str = ""
         for metric_id in range(len(metric_list_name)):
