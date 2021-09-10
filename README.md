@@ -5,8 +5,6 @@
 
 原论文代码：[DeepCTR-DeepFEFM](https://github.com/shenweichen/DeepCTR/blob/master/deepctr/models/deepfefm.py)
 
-复现效果：AUC 0.802757
-
 在线使用：[AIStudio在线体验项目](https://aistudio.baidu.com/aistudio/projectdetail/2253037)
 
 ## 模型简介
@@ -19,6 +17,19 @@
 <div align="center"><img src=https://i.loli.net/2021/08/13/XVBLZ89nI3SrDt7.png height=40></img></div>
 
 其中与FFM，FwFM模型的核心区别就是使用一个对称矩阵 Field pair matrix embeddings `$W_{F(i),F(j)}$` 对不同field的关系进行建模。
+
+## 复现精度
+
+| 数据集 | 复现精度 |
+| --- | --- |
+| [Criteo(Paddle版)](https://github.com/PaddlePaddle/PaddleRec/blob/master/datasets/criteo/run.sh) | 0.80276 |
+
+- 核心参数设置
+```
+- lr: 0.0005
+- batch_size: 5120
+- optimizer: Adam
+```
 
 ## 代码简介
 

@@ -147,7 +147,7 @@ class FEFM(nn.Layer):
 
         y_field_emb_second_order = paddle.sum(fefm_interaction_embedding, axis=1, keepdim=True)
 
-        dnn_input = paddle.reshape(sparse_embeddings, [sparse_embeddings.shape[0], -1])
+        dnn_input = paddle.reshape(sparse_embeddings, [0, -1])
         dnn_input = paddle.concat([dnn_input, _dense_emb_one], 1)  # [batch_size, dense_feature_number + sparse_feature_number * sparse_feature_dim]
         dnn_input = paddle.concat([dnn_input, fefm_interaction_embedding], 1)  # [batch_size, dense_feature_number + sparse_feature_number * sparse_feature_dim + num_fields*(num_fields-1)/2]
 
